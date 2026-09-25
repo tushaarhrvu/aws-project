@@ -1,0 +1,12 @@
+# Netlify deploy configuration for ShopAll
+# The whole site is a single static HTML file — no build step needed.
+
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

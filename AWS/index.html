@@ -1,0 +1,738 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ShopAll - Search Every Store at Once</title>
+<style>
+:root{
+  --bg:#f0f2f5;--sur:#fff;--sur2:#f8f9fb;--bdr:#e2e6ea;
+  --txt:#1a1a2e;--mut:#6b7280;--acc:#6c47ff;--ac2:#ff6b35;--ach:#5535e0;
+  --grn:#16a34a;--shh:0 8px 32px rgba(108,71,255,.2);--rr:14px;
+  --tgb:#ede9fe;--tgt:#5b21b6;
+  --hbg:linear-gradient(135deg,#6c47ff 0%,#a855f7 50%,#ff6b35 100%);
+}
+[data-theme=dark]{
+  --bg:#0f0f1a;--sur:#1a1a2e;--sur2:#16213e;--bdr:#2d2d4e;
+  --txt:#f1f1f5;--mut:#9ca3af;--acc:#8b6fff;--ach:#7c5fe0;--grn:#22c55e;
+  --shh:0 8px 32px rgba(139,111,255,.3);--tgb:#2d1f5e;--tgt:#c4b5fd;
+  --hbg:linear-gradient(135deg,#4c2faf 0%,#7e3fa3 50%,#c24e1f 100%);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+a{text-decoration:none;color:inherit}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:300;background:var(--sur);border-bottom:1px solid var(--bdr);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:60px;box-shadow:0 2px 10px rgba(0,0,0,.07);gap:12px}
+.logo{font-size:1.3rem;font-weight:800;background:var(--hbg);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap}
+.navr{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rwrap{display:flex;align-items:center;gap:6px;background:var(--sur2);border:1.5px solid var(--bdr);border-radius:50px;padding:5px 14px 5px 10px;transition:border-color .2s}
+.rwrap:hover{border-color:var(--acc)}
+#rsel{border:none;background:transparent;font-size:.82rem;font-weight:600;color:var(--txt);cursor:pointer;outline:none;max-width:180px}
+.tbtn{background:var(--sur2);border:1.5px solid var(--bdr);color:var(--txt);padding:6px 14px;border-radius:50px;cursor:pointer;font-size:.82rem;font-weight:600;transition:all .2s}
+.tbtn:hover{background:var(--acc);color:#fff;border-color:var(--acc)}
+
+/* HERO */
+.hero{background:var(--hbg);padding:46px 20px 58px;text-align:center}
+.hero h1{font-size:clamp(1.6rem,4.5vw,2.7rem);font-weight:900;color:#fff;line-height:1.2;margin-bottom:8px}
+.hero p{color:rgba(255,255,255,.82);font-size:.94rem;margin-bottom:22px}
+#rbanner{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.14);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.26);border-radius:50px;padding:7px 18px;color:#fff;font-size:.83rem;font-weight:600;margin-bottom:16px;min-width:200px;justify-content:center}
+.stats{display:flex;justify-content:center;gap:22px;margin-top:18px;flex-wrap:wrap}
+.stat{color:rgba(255,255,255,.88);text-align:center}
+.stat strong{display:block;font-size:1.3rem;font-weight:800;color:#fff}
+.stat span{font-size:.68rem;opacity:.8}
+#smartHint{display:none;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:50px;padding:5px 16px;color:#fff;font-size:.77rem;font-weight:600;margin-top:9px;text-align:center}
+
+/* SEARCH */
+.sw{max-width:700px;margin:0 auto}
+.sb{display:flex;background:#fff;border-radius:50px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.22)}
+.sico{display:flex;align-items:center;padding:0 14px;color:#9ca3af;font-size:1rem;flex-shrink:0}
+#sinput{flex:1;border:none;outline:none;padding:16px 0;font-size:1rem;color:#1a1a2e;background:transparent;min-width:0}
+#sinput::placeholder{color:#9ca3af}
+.sbtns{display:flex;flex-shrink:0}
+#pbtn{background:var(--grn);color:#fff;border:none;padding:16px 15px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;border-right:1px solid rgba(255,255,255,.2)}
+#pbtn:hover{filter:brightness(1.1)}
+#sbtn{background:var(--acc);color:#fff;border:none;padding:16px 20px;font-size:.88rem;font-weight:700;cursor:pointer}
+#sbtn:hover{background:var(--ach)}
+.hint{color:rgba(255,255,255,.55);font-size:.72rem;margin-top:7px;text-align:center}
+kbd{background:rgba(255,255,255,.16);border-radius:4px;padding:1px 6px;font-family:monospace;font-size:.68rem}
+
+/* PRICE MODAL */
+#pmodal{display:none;position:fixed;inset:0;z-index:500;background:rgba(10,10,26,.82);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px}
+#pmodal.show{display:flex}
+.pbox{background:var(--sur);border-radius:20px;padding:26px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);position:relative;max-height:90vh;overflow-y:auto}
+.pbox h2{font-size:1.05rem;font-weight:800;margin-bottom:4px}
+.psub{font-size:.78rem;color:var(--mut);margin-bottom:16px}
+.pcards{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
+.pcard{display:flex;align-items:center;gap:12px;background:var(--sur2);border:1.5px solid var(--bdr);border-radius:12px;padding:13px;transition:all .2s;cursor:pointer;text-decoration:none}
+.pcard:hover{border-color:var(--acc);box-shadow:var(--shh);transform:translateX(3px)}
+.prank{width:28px;height:28px;border-radius:50%;color:#fff;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.plogo{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:#fff;flex-shrink:0}
+.pinfo{flex:1;min-width:0}
+.pname{font-size:.86rem;font-weight:700}
+.pdesc{font-size:.7rem;color:var(--mut);margin-top:2px}
+.pall{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.pallbtn{padding:6px 12px;background:var(--sur2);border:1px solid var(--bdr);border-radius:50px;font-size:.72rem;font-weight:600;cursor:pointer;text-decoration:none;color:var(--txt);display:flex;align-items:center;gap:5px;transition:all .2s}
+.pallbtn:hover{background:var(--acc);color:#fff;border-color:var(--acc)}
+.pclose{position:absolute;top:14px;right:14px;background:var(--sur2);border:1px solid var(--bdr);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center}
+.pclose:hover{background:var(--acc);color:#fff}
+.pnote{font-size:.68rem;color:var(--mut);text-align:center;line-height:1.5}
+
+/* LAUNCH OVERLAY */
+#overlay{display:none;position:fixed;inset:0;z-index:400;background:rgba(10,10,26,.82);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px}
+#overlay.show{display:flex}
+.ovbox{background:var(--sur);border-radius:20px;padding:26px 28px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.ovtitle{font-size:1.05rem;font-weight:800;margin-bottom:4px}
+.ovsub{font-size:.8rem;color:var(--mut);margin-bottom:16px}
+.pgwrap{background:var(--bdr);border-radius:50px;height:7px;overflow:hidden;margin-bottom:12px}
+.pgbar{height:100%;background:var(--hbg);border-radius:50px;transition:width .3s;width:0}
+.ovlist{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:16px;max-height:130px;overflow-y:auto}
+.ovitem{font-size:.7rem;padding:3px 9px;border-radius:50px;background:var(--sur2);border:1px solid var(--bdr);display:flex;align-items:center;gap:4px;transition:background .3s}
+.ovitem.done{background:var(--tgb);color:var(--tgt);border-color:transparent}
+.ovcls{background:var(--acc);color:#fff;border:none;padding:9px 26px;border-radius:50px;font-size:.84rem;font-weight:700;cursor:pointer}
+.ovcls:hover{background:var(--ach)}
+.ovwarn{font-size:.68rem;color:var(--mut);margin-top:8px}
+
+/* MAIN */
+.wrap{max-width:1300px;margin:0 auto;padding:0 18px}
+.sec{padding:22px 0 14px}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.st{font-size:1.05rem;font-weight:800;display:flex;align-items:center;gap:7px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--acc);display:inline-block}
+.rc{font-size:.75rem;color:var(--mut);background:var(--sur2);padding:3px 12px;border-radius:50px;border:1px solid var(--bdr)}
+.cats{display:flex;gap:7px;flex-wrap:wrap;padding:12px 0 4px}
+.cb{padding:6px 14px;border-radius:50px;border:1.5px solid var(--bdr);background:var(--sur);color:var(--mut);font-size:.76rem;font-weight:600;cursor:pointer;transition:all .2s}
+.cb:hover,.cb.active{background:var(--acc);color:#fff;border-color:var(--acc)}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:13px}
+.card{background:var(--sur);border:1.5px solid var(--bdr);border-radius:var(--rr);padding:14px 12px;transition:all .22s;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:8px}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--cc,var(--acc));opacity:0;transition:opacity .2s}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shh);border-color:var(--acc)}
+.card:hover::before{opacity:1}
+.ch{display:flex;align-items:center;gap:9px}
+.cl{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.76rem;font-weight:800;color:#fff;flex-shrink:0}
+.cn{font-size:.86rem;font-weight:700}
+.cr{font-size:.62rem;color:var(--mut);margin-top:1px}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:.58rem;font-weight:600;padding:2px 7px;border-radius:50px;background:var(--tgb);color:var(--tgt)}
+.acts{display:flex;gap:5px;margin-top:auto}
+.bsr{flex:1;padding:7px;background:var(--acc);color:#fff;border:none;border-radius:7px;font-size:.73rem;font-weight:700;cursor:pointer}
+.bsr:hover{background:var(--ach)}
+.bvt{padding:7px 9px;background:var(--sur2);color:var(--mut);border:1px solid var(--bdr);border-radius:7px;font-size:.73rem;cursor:pointer}
+.bvt:hover{background:var(--bdr)}
+.empty{text-align:center;padding:48px 20px;color:var(--mut);display:none}
+.spinner-wrap{text-align:center;padding:44px 20px;color:var(--mut);display:none}
+.spinner{width:28px;height:28px;border:3px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+footer{text-align:center;padding:20px;color:var(--mut);font-size:.72rem;border-top:1px solid var(--bdr);margin-top:28px}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--acc);color:#fff;padding:9px 16px;border-radius:50px;font-size:.81rem;font-weight:600;z-index:9999;opacity:0;transform:translateY(14px);transition:all .25s;pointer-events:none;max-width:300px}
+.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:640px){
+  .hero{padding:26px 14px 44px}
+  nav{height:auto;padding:10px 14px;flex-wrap:wrap}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px}
+  .card{padding:10px 8px}
+  #sbtn,#pbtn{padding:16px 10px;font-size:.76rem}
+}
+</style>
+</head>
+<body>
+
+<!-- PRICE COMPARISON MODAL -->
+<div id="pmodal" onclick="if(event.target===this)closePModal()">
+  <div class="pbox">
+    <button class="pclose" onclick="closePModal()">&#x2715;</button>
+    <h2 id="pmtitle">&#x1F4B0; Price Comparison</h2>
+    <div class="psub" id="pmsub">Top stores for your region &mdash; click any to see live price</div>
+    <div class="pcards" id="pmcards"></div>
+    <div style="font-size:.76rem;font-weight:700;color:var(--mut);margin-bottom:8px">All stores in your region:</div>
+    <div class="pall" id="pmall"></div>
+    <div class="pnote">&#x2139;&#xFE0F; Click any store to see the live price. Prices are set by each retailer. Not affiliated with any store.</div>
+  </div>
+</div>
+
+<!-- LAUNCH OVERLAY -->
+<div id="overlay" onclick="if(event.target===this)closeOverlay()">
+  <div class="ovbox">
+    <div class="ovtitle" id="ovtitle">&#x1F680; Launching stores...</div>
+    <div class="ovsub" id="ovsub">Opening all stores in your region</div>
+    <div class="pgwrap"><div class="pgbar" id="pgbar"></div></div>
+    <div class="ovlist" id="ovlist"></div>
+    <button class="ovcls" onclick="closeOverlay()">&#x2714; Done &mdash; Close</button>
+    <div class="ovwarn">&#x26A0;&#xFE0F; If tabs are blocked, click Allow pop-ups in your browser address bar</div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">&#x1F6D2; ShopAll</div>
+  <div class="navr">
+    <div class="rwrap">
+      <span id="nflag" style="font-size:1rem">&#x1F30D;</span>
+      <select id="rsel" onchange="changeRegion(this.value)">
+        <option value="all">&#x1F30D; All Regions</option>
+        <option value="IN">&#x1F1EE;&#x1F1F3; India</option>
+        <option value="US">&#x1F1FA;&#x1F1F8; USA</option>
+        <option value="UK">&#x1F1EC;&#x1F1E7; United Kingdom</option>
+        <option value="DE">&#x1F1E9;&#x1F1EA; Germany</option>
+        <option value="FR">&#x1F1EB;&#x1F1F7; France</option>
+        <option value="AU">&#x1F1E6;&#x1F1FA; Australia</option>
+        <option value="CA">&#x1F1E8;&#x1F1E6; Canada</option>
+        <option value="AE">&#x1F1E6;&#x1F1EA; UAE</option>
+        <option value="SG">&#x1F1F8;&#x1F1EC; Singapore</option>
+        <option value="JP">&#x1F1EF;&#x1F1F5; Japan</option>
+        <option value="CN">&#x1F1E8;&#x1F1F3; China</option>
+        <option value="BR">&#x1F1E7;&#x1F1F7; Brazil</option>
+      </select>
+    </div>
+    <button class="tbtn" id="tbtn" onclick="toggleTheme()">&#x1F319; Dark</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div id="rbanner"><span id="bflag">&#x1F30D;</span>&nbsp;<span id="btxt">Detecting your location...</span></div>
+  <h1>Search. Compare. Shop.</h1>
+  <p>Auto-detects your country &bull; Compare prices &bull; Open all stores at once</p>
+  <div class="sw">
+    <div class="sb">
+      <div class="sico">&#x1F50D;</div>
+      <input id="sinput" type="text" placeholder="iPhone 16, pizza, Nike shoes..." autocomplete="off"/>
+      <div class="sbtns">
+        <button id="sbtn" onclick="showPriceModal()">&#x1F4B0; Compare Prices</button>
+        <button id="pbtn" onclick="doSearch()" title="Open all stores in new tabs">&#x1F680; Open All</button>
+      </div>
+    </div>
+    <div class="hint">Press <kbd>Enter</kbd> to compare prices in a popup &bull; <strong>Open All</strong> launches every store in new tabs</div>
+  </div>
+  <div id="smartHint"></div>
+  <div class="stats">
+    <div class="stat"><strong id="cntStat">80+</strong><span>Stores</span></div>
+    <div class="stat"><strong id="regStat">&#x1F30D;</strong><span>Your Region</span></div>
+    <div class="stat"><strong>&#x1F4B0;</strong><span>Price Compare</span></div>
+    <div class="stat"><strong>Free</strong><span>Always</span></div>
+  </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<div class="wrap">
+  <div class="cats" id="cats">
+    <button class="cb active" onclick="fc(this,'all')">&#x1F310; All</button>
+    <button class="cb" onclick="fc(this,'general')">&#x1F6CD; General</button>
+    <button class="cb" onclick="fc(this,'electronics')">&#x1F4F1; Electronics</button>
+    <button class="cb" onclick="fc(this,'fashion')">&#x1F457; Fashion</button>
+    <button class="cb" onclick="fc(this,'food')">&#x1F354; Food</button>
+    <button class="cb" onclick="fc(this,'grocery')">&#x1F6D2; Grocery</button>
+    <button class="cb" onclick="fc(this,'beauty')">&#x1F484; Beauty</button>
+    <button class="cb" onclick="fc(this,'home')">&#x1F3E0; Home</button>
+    <button class="cb" onclick="fc(this,'sports')">&#x26BD; Sports</button>
+    <button class="cb" onclick="fc(this,'books')">&#x1F4DA; Books</button>
+    <button class="cb" onclick="fc(this,'luxury')">&#x1F48E; Luxury</button>
+    <button class="cb" onclick="fc(this,'secondhand')">&#x267B; Used</button>
+    <button class="cb" onclick="fc(this,'travel')">&#x2708;&#xFE0F; Travel</button>
+  </div>
+  <div class="sec">
+    <div class="sh">
+      <div class="st"><span class="dot"></span><span id="stitle">&nbsp;Stores in Your Region</span></div>
+      <span class="rc" id="rc">Loading...</span>
+    </div>
+    <div class="spinner-wrap" id="loader"><div class="spinner"></div><p>Detecting location...</p></div>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty">
+      <div style="font-size:2.4rem;margin-bottom:8px">&#x1F30D;</div>
+      <p>No stores found for this filter in your region.</p>
+      <button class="cb active" style="margin-top:12px" onclick="changeRegion('all')">&#x1F310; Show All Regions</button>
+    </div>
+  </div>
+</div>
+
+<footer>ShopAll &mdash; Auto-detects your country &bull; 80+ stores &bull; Compare prices &bull; Not affiliated with any store</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STORE DATA
+// [name, categories, color, abbr, searchURL, visitURL, regions, tags, visitOnly]
+// visitOnly=true: open homepage only (no search query appended)
+// ============================================================
+var S = [
+  // GLOBAL
+  ["Amazon","general|electronics|fashion|home|books","#FF9900","A","https://www.amazon.com/s?k=","https://www.amazon.com","all","Global|Popular",false],
+  ["AliExpress","general|electronics|fashion","#FF4747","Ali","https://www.aliexpress.com/w/wholesale-","https://www.aliexpress.com","all","Budget|Global",false],
+  ["eBay","general|secondhand|electronics","#E53238","e","https://www.ebay.com/sch/i.html?_nkw=","https://www.ebay.com","all","Auction|Global",false],
+  ["Alibaba","general","#FF6A00","B2B","https://www.alibaba.com/trade/search?SearchText=","https://www.alibaba.com","all","Wholesale|B2B",false],
+  ["Temu","general|fashion|electronics","#F97316","T","https://www.temu.com/search_result.html?search_key=","https://www.temu.com","all","Budget|Trending",false],
+  ["Wish","general|fashion","#794DFF","W","https://www.wish.com/search/","https://www.wish.com","all","Budget|Deals",false],
+  ["Shein","fashion","#111111","SH","https://www.shein.com/pdsearch/","https://www.shein.com","all","Fast Fashion",false],
+  ["Booking.com","travel","#003580","BK","https://www.booking.com/searchresults.html?ss=","https://www.booking.com","all","Hotels|Travel",false],
+  ["Expedia","travel","#003781","EX","https://www.expedia.com/Hotel-Search?destination=","https://www.expedia.com","all","Flights|Travel",false],
+  ["Farfetch","fashion|luxury","#1A1A1A","FF","https://www.farfetch.com/shopping/men/search/items.aspx?q=","https://www.farfetch.com","all","Luxury|Designer",false],
+  ["SSENSE","luxury|fashion","#1A1A1A","SS","https://www.ssense.com/en-us/everything?search=","https://www.ssense.com","all","Luxury",false],
+  ["Net-A-Porter","luxury|fashion","#1A1A1A","NAP","https://www.net-a-porter.com/en-us/shop/search?q=","https://www.net-a-porter.com","all","Luxury|Fashion",false],
+  ["Mytheresa","luxury|fashion","#E91E8C","MT","https://www.mytheresa.com/en-de/search/?q=","https://www.mytheresa.com","all","Luxury|Women",false],
+  ["Depop","secondhand|fashion","#FF2300","DP","https://www.depop.com/search/?q=","https://www.depop.com","all","Vintage|Used",false],
+  ["Uniqlo","fashion","#CC0000","UQ","https://www.uniqlo.com/us/en/search?q=","https://www.uniqlo.com","all","Basics|Quality",false],
+  ["Rakuten","general|electronics","#BF0000","R","https://www.rakuten.com/search/","https://www.rakuten.com","all","Cashback",false],
+  ["Sephora","beauty","#111111","SE","https://www.sephora.com/search?keyword=","https://www.sephora.com","all","Beauty|Premium",false],
+  ["Lookfantastic","beauty","#B3005E","LF","https://www.lookfantastic.com/catalogsearch/result/?q=","https://www.lookfantastic.com","all","Beauty",false],
+  ["IKEA","home","#0058A3","IK","https://www.ikea.com/us/en/search/?q=","https://www.ikea.com","all","Furniture|Home",false],
+  // INDIA
+  ["Amazon India","general|electronics|fashion","#FF9900","A","https://www.amazon.in/s?k=","https://www.amazon.in","IN","India|Popular",false],
+  ["Flipkart","general|electronics|fashion","#2874F0","F","https://www.flipkart.com/search?q=","https://www.flipkart.com","IN","India|Popular",false],
+  ["Meesho","fashion|general","#9B2DAA","M","https://www.meesho.com/search?q=","https://www.meesho.com","IN","India|Budget",false],
+  ["Myntra","fashion|beauty","#FF3F6C","MY","https://www.myntra.com/","https://www.myntra.com","IN","India|Fashion",true],
+  ["Nykaa","beauty","#FC2779","N","https://www.nykaa.com/search/result/?q=","https://www.nykaa.com","IN","India|Beauty",false],
+  ["Snapdeal","general|electronics","#E40000","S","https://www.snapdeal.com/search?keyword=","https://www.snapdeal.com","IN","India|Deals",false],
+  ["BigBasket","grocery","#84BB00","BB","https://www.bigbasket.com/ps/?q=","https://www.bigbasket.com","IN","India|Grocery",false],
+  ["Blinkit","grocery|food","#FFCC00","BL","https://blinkit.com/s/?q=","https://blinkit.com","IN","India|10-min",false],
+  ["Swiggy","food|grocery","#FC8019","SW","https://www.swiggy.com/search?query=","https://www.swiggy.com","IN","Food Delivery",false],
+  ["Zomato","food","#E23744","ZO","https://www.zomato.com/search?q=","https://www.zomato.com","IN","Food Delivery",false],
+  ["Zepto","grocery|food","#8B2BE2","Z","https://www.zeptonow.com/search?query=","https://www.zeptonow.com","IN","India|10-min",false],
+  ["JioMart","grocery|general","#0060DF","J","https://www.jiomart.com/search?q=","https://www.jiomart.com","IN","India|Grocery",false],
+  ["Tata CLiQ","general|fashion|electronics","#C8232C","TC","https://www.tatacliq.com/search/?text=","https://www.tatacliq.com","IN","India|Premium",false],
+  ["AJIO","fashion","#FF4A17","AJ","https://www.ajio.com/search/?text=","https://www.ajio.com","IN","India|Fashion",false],
+  ["PharmEasy","beauty","#00A99D","Rx","https://pharmeasy.in/search/all?name=","https://pharmeasy.in","IN","Pharmacy",false],
+  ["1mg","beauty","#E8372A","1mg","https://www.1mg.com/search/all?name=","https://www.1mg.com","IN","Health",false],
+  ["Pepperfry","home","#F7941D","PF","https://www.pepperfry.com/site_search.html#nf-q=","https://www.pepperfry.com","IN","Furniture",false],
+  ["Urban Ladder","home","#EF7D00","UL","https://www.urbanladder.com/search?q=","https://www.urbanladder.com","IN","Home|Decor",false],
+  ["OLX India","secondhand","#3DB54A","OLX","https://www.olx.in/items/q-","https://www.olx.in","IN","India|Used",false],
+  ["Decathlon IN","sports","#006EAF","DC","https://www.decathlon.in/search?Ntt=","https://www.decathlon.in","IN","Sports",false],
+  ["MakeMyTrip","travel","#E83B63","MMT","https://www.makemytrip.com/","https://www.makemytrip.com","IN","India|Travel",true],
+  ["Swiggy Instamart","grocery","#FC8019","SI","https://www.swiggy.com/instamart/search?query=","https://www.swiggy.com","IN","India|Instant",false],
+  ["Zomato Food","food","#E23744","ZF","https://www.zomato.com/search?q=","https://www.zomato.com","IN","India|Food",false],
+  // USA
+  ["Walmart","general|grocery|electronics","#0071CE","W","https://www.walmart.com/search?q=","https://www.walmart.com","US|CA","Low Price",false],
+  ["Best Buy","electronics","#003884","BB","https://www.bestbuy.com/site/searchpage.jsp?st=","https://www.bestbuy.com","US|CA","Electronics",false],
+  ["Newegg","electronics","#E7650F","NE","https://www.newegg.com/p/pl?d=","https://www.newegg.com","US|CA","PC Parts",false],
+  ["B&H Photo","electronics","#1A1A1A","BH","https://www.bhphotovideo.com/c/search?Ntt=","https://www.bhphotovideo.com","US","Camera",false],
+  ["Nike","fashion|sports","#111111","NK","https://www.nike.com/w?q=","https://www.nike.com","US|CA|AU|UK","Sports|Premium",false],
+  ["Nordstrom","fashion|luxury","#1A1A1A","NO","https://www.nordstrom.com/sr?keyword=","https://www.nordstrom.com","US|CA","Premium",false],
+  ["Instacart","grocery","#43B02A","IC","https://www.instacart.com/store/s?k=","https://www.instacart.com","US|CA","Grocery",false],
+  ["Wayfair","home","#7D10CD","WF","https://www.wayfair.com/keyword.php?keyword=","https://www.wayfair.com","US|CA|UK|DE","Furniture",false],
+  ["Home Depot","home","#F96302","HD","https://www.homedepot.com/s/","https://www.homedepot.com","US|CA","DIY|Home",false],
+  ["Ulta Beauty","beauty","#2A166F","UB","https://www.ulta.com/shop/search?search=","https://www.ulta.com","US","Beauty",false],
+  ["REI","sports","#4A7B3A","RE","https://www.rei.com/search?q=","https://www.rei.com","US","Outdoor",false],
+  ["Poshmark","secondhand|fashion","#D0021B","PM","https://poshmark.com/search?query=","https://poshmark.com","US|CA|AU","Used|Fashion",false],
+  ["ThriftBooks","books|secondhand","#4CAF50","TB","https://www.thriftbooks.com/browse/?b.search=","https://www.thriftbooks.com","US|CA","Books|Used",false],
+  ["DoorDash","food","#FF3008","DD","https://www.doordash.com/search/store/","https://www.doordash.com","US|CA|AU","Food Delivery",false],
+  ["Grubhub","food","#F63440","GH","https://www.grubhub.com/search?queryText=","https://www.grubhub.com","US","Food Delivery",false],
+  ["Uber Eats","food","#06C167","UE","https://www.ubereats.com/search?q=","https://www.ubereats.com","US|CA|AU|UK|DE|FR|IN","Food Delivery",false],
+  ["Overstock","home","#E82B2B","OS","https://www.overstock.com/search?keywords=","https://www.overstock.com","US","Home|Deals",false],
+  ["Facebook Mkt","secondhand|general","#1877F2","FB","https://www.facebook.com/marketplace/search/?query=","https://www.facebook.com/marketplace","US|CA|AU|UK|DE|FR","Used|Local",false],
+  ["Amazon CA","general|electronics|fashion","#FF9900","A","https://www.amazon.ca/s?k=","https://www.amazon.ca","CA","Canada",false],
+  // UK
+  ["ASOS","fashion","#2D2D2D","AS","https://www.asos.com/search/?q=","https://www.asos.com","UK|US|AU|DE|FR","Fashion",false],
+  ["Currys","electronics","#9C006A","Cu","https://www.currys.co.uk/search?q=","https://www.currys.co.uk","UK","Electronics",false],
+  ["Ocado","grocery","#5B2D8E","OC","https://www.ocado.com/search?entry=","https://www.ocado.com","UK","Grocery",false],
+  ["Sainsburys","grocery","#FF8200","SB","https://www.sainsburys.co.uk/gol-ui/SearchDisplayView?searchTerm=","https://www.sainsburys.co.uk","UK","Grocery",false],
+  ["Deliveroo","food","#00CCBC","DR","https://deliveroo.co.uk/search?query=","https://deliveroo.co.uk","UK|AU|FR|DE|AE|SG","Food Delivery",false],
+  ["Just Eat","food","#FF8000","JE","https://www.just-eat.co.uk/search?q=","https://www.just-eat.co.uk","UK|IE|DE|FR|ES|IT|NL|AU|CA","Food Delivery",false],
+  ["Vinted","secondhand|fashion","#09B1BA","VI","https://www.vinted.com/catalog?search_text=","https://www.vinted.com","UK|DE|FR|ES|IT|NL|BE|PL","Used|Fashion",false],
+  ["Cult Beauty","beauty","#C41E3A","CB","https://www.cultbeauty.co.uk/search/results/?q=","https://www.cultbeauty.co.uk","UK","Beauty",false],
+  // EUROPE
+  ["Zalando","fashion","#FF6900","ZA","https://www.zalando.de/suche/?q=","https://www.zalando.de","DE|AT|CH|FR|IT|NL|BE|PL|ES|FI|SE|NO|DK|UK","Fashion",false],
+  ["MediaMarkt","electronics","#CC0000","MM","https://www.mediamarkt.de/de/search.html?query=","https://www.mediamarkt.de","DE|AT|CH|NL|ES|IT|HU|PL","Electronics",false],
+  ["Otto","general|fashion|home","#CC0000","OT","https://www.otto.de/suche/","https://www.otto.de","DE|AT","Germany",false],
+  ["Cdiscount","general|electronics","#CC0000","CD","https://www.cdiscount.com/search/10/","https://www.cdiscount.com","FR","France",false],
+  ["Zara","fashion","#555555","Z","https://www.zara.com/us/en/search?searchTerm=","https://www.zara.com","DE|FR|ES|IT|NL|UK|US|CA|AU","Fashion|Trendy",false],
+  ["H&M","fashion","#CC0000","HM","https://www2.hm.com/en_us/search-results.html?q=","https://www.hm.com","DE|FR|ES|IT|NL|UK|US|CA|AU","Fashion",false],
+  ["Adidas","fashion|sports","#000000","AD","https://www.adidas.com/us/search?q=","https://www.adidas.com","DE|FR|US|UK|AU|CA|IN","Sports|Premium",false],
+  ["Puma","fashion|sports","#CC0000","PU","https://us.puma.com/us/en/search?q=","https://us.puma.com","DE|US|UK|FR|AU","Sports",false],
+  ["Decathlon EU","sports","#006EAF","DE","https://www.decathlon.fr/search?Ntt=","https://www.decathlon.fr","DE|FR|ES|IT|UK|NL|BE|PT","Sports",false],
+  ["Wolt","food","#009DE0","WL","https://wolt.com/en/search?q=","https://wolt.com","DE|FI|DK|SE|NO|CZ|SK|HU|PL|GR|IL|AE","Food Delivery",false],
+  // AUSTRALIA
+  ["Kogan","electronics|general","#CC0000","KO","https://www.kogan.com/au/shop/?q=","https://www.kogan.com","AU","Electronics",false],
+  ["JB Hi-Fi","electronics","#FFD700","JB","https://www.jbhifi.com.au/search?q=","https://www.jbhifi.com.au","AU","Electronics",false],
+  ["Catch","general","#E91E8C","CA","https://www.catch.com.au/search/?query=","https://www.catch.com.au","AU","Deals",false],
+  ["Menulog","food","#E63018","ML","https://www.menulog.com.au/","https://www.menulog.com.au","AU","Food",true],
+  // JAPAN
+  ["Rakuten JP","general|electronics|fashion","#BF0000","RJ","https://search.rakuten.co.jp/search/mall/","https://www.rakuten.co.jp","JP","Japan",false],
+  ["Yahoo JP","general|electronics","#FF0033","YJ","https://shopping.yahoo.co.jp/search?p=","https://shopping.yahoo.co.jp","JP","Japan",false],
+  // UAE
+  ["Noon","general|electronics|fashion","#FFD700","NO","https://www.noon.com/uae-en/search/?q=","https://www.noon.com","AE|SA|EG","Middle East",false],
+  ["Amazon AE","general|electronics","#FF9900","A","https://www.amazon.ae/s?k=","https://www.amazon.ae","AE|SA","UAE",false],
+  ["Talabat","food","#FF6B00","TL","https://www.talabat.com/","https://www.talabat.com","AE|SA|KW|QA|BH|OM|EG","Food",true],
+  // CHINA
+  ["JD.com","electronics|general","#CC0000","JD","https://search.jd.com/Search?keyword=","https://www.jd.com","CN","China",false],
+  ["Taobao","general|fashion","#FF5500","TB","https://s.taobao.com/search?q=","https://www.taobao.com","CN","China|Budget",false],
+  ["Pinduoduo","general|grocery","#E02020","PDD","https://mobile.yangkeduo.com/search_result.html?search_key=","https://www.pinduoduo.com","CN","China",false],
+  // SE ASIA
+  ["Shopee","general|fashion","#EE4D2D","SP","https://shopee.sg/search?keyword=","https://shopee.sg","SG|MY|TH|ID|PH|VN|TW","SE Asia",false],
+  ["Lazada","general|electronics|fashion","#1A00FF","LA","https://www.lazada.com/","https://www.lazada.com","SG|MY|TH|ID|PH|VN","SE Asia",true],
+  ["GrabFood","food","#00B14F","GF","https://food.grab.com/","https://food.grab.com","SG|MY|TH|ID|PH|VN","Food",true],
+  // LATAM
+  ["Mercado Livre","general|secondhand","#FFE600","ML","https://www.mercadolivre.com.br/jm/search?as_word=","https://www.mercadolivre.com.br","BR|MX|AR|CO|CL|PE","LatAm",false],
+  ["iFood","food","#EA1D2C","IF","https://www.ifood.com.br/","https://www.ifood.com.br","BR","Food",true],
+  ["Rappi","food|grocery","#FF441F","RP","https://www.rappi.com/","https://www.rappi.com","BR|MX|CO|AR|CL|PE","Food",true]
+];
+
+// Country code -> internal region key
+var CM = {
+  "IN":"IN","US":"US","GB":"UK","UK":"UK","DE":"DE","FR":"FR",
+  "AU":"AU","CA":"CA","AE":"AE","SG":"SG","JP":"JP","CN":"CN","BR":"BR","MX":"BR",
+  "AT":"DE","CH":"DE","NL":"UK","BE":"DE","ES":"DE","IT":"DE","PL":"DE",
+  "SE":"DE","DK":"DE","FI":"DE","NO":"DE","IE":"UK","CZ":"DE","SK":"DE",
+  "HU":"DE","GR":"DE","PT":"DE","SA":"AE","KW":"AE","QA":"AE","BH":"AE",
+  "OM":"AE","EG":"AE","IL":"DE","MY":"SG","TH":"SG","ID":"SG","PH":"SG",
+  "VN":"SG","BD":"SG","PK":"SG","CO":"BR","AR":"BR","CL":"BR","PE":"BR"
+};
+
+// Region labels with flag
+var CL = {
+  "IN":"&#x1F1EE;&#x1F1F3; India",
+  "US":"&#x1F1FA;&#x1F1F8; USA",
+  "UK":"&#x1F1EC;&#x1F1E7; UK",
+  "DE":"&#x1F1E9;&#x1F1EA; Germany",
+  "FR":"&#x1F1EB;&#x1F1F7; France",
+  "AU":"&#x1F1E6;&#x1F1FA; Australia",
+  "CA":"&#x1F1E8;&#x1F1E6; Canada",
+  "AE":"&#x1F1E6;&#x1F1EA; UAE",
+  "SG":"&#x1F1F8;&#x1F1EC; Singapore",
+  "JP":"&#x1F1EF;&#x1F1F5; Japan",
+  "CN":"&#x1F1E8;&#x1F1F3; China",
+  "BR":"&#x1F1E7;&#x1F1F7; Brazil",
+  "all":"&#x1F30D; Global"
+};
+
+// Top stores per region for price comparison popup
+var PTOP = {
+  "IN": ["Amazon India","Flipkart","Meesho","Snapdeal","Tata CLiQ","Nykaa","BigBasket","AJIO"],
+  "US": ["Amazon","Walmart","Best Buy","Newegg","Nordstrom","eBay","Overstock"],
+  "UK": ["Amazon","eBay","ASOS","Currys","Vinted"],
+  "DE": ["Amazon","Zalando","MediaMarkt","Otto","eBay"],
+  "FR": ["Amazon","Cdiscount","Zalando","eBay","ASOS"],
+  "AU": ["Amazon","Kogan","JB Hi-Fi","Catch","eBay"],
+  "CA": ["Amazon CA","Walmart","Best Buy","eBay","Poshmark"],
+  "AE": ["Amazon AE","Noon","eBay"],
+  "SG": ["Shopee","Amazon","eBay"],
+  "JP": ["Rakuten JP","Yahoo JP","Amazon"],
+  "CN": ["Taobao","JD.com","Pinduoduo"],
+  "BR": ["Mercado Livre","Amazon","eBay"],
+  "all":["Amazon","AliExpress","eBay","Temu","Wish","Farfetch"]
+};
+
+// Smart keyword detection
+var KW = {
+  food: ["pizza","burger","biryani","sushi","pasta","noodle","chicken","kebab","dosa","roti","restaurant","meal","dinner","lunch","breakfast","eat","curry","tacos","fries","coffee","chai","dessert","cake","snack","food","takeout","takeaway"],
+  grocery: ["milk","eggs","bread","rice","vegetables","fruits","flour","sugar","oil","butter","groceries","produce","organic","fresh","meat","fish","seafood","detergent","shampoo","soap","household"],
+  electronics: ["iphone","samsung","laptop","phone","smartphone","tablet","ipad","macbook","computer","gaming","ps5","xbox","headphones","earbuds","airpods","tv","television","camera","printer","router","keyboard","mouse","monitor","ssd","cpu","gpu","charger","speaker","bluetooth","drone","smartwatch"],
+  fashion: ["shirt","shoes","dress","jeans","kurta","saree","jacket","coat","sneakers","bag","handbag","watch","sunglasses","cap","socks","suit","trouser","skirt","hoodie","sweater","shorts","belt","wallet","leggings","clothing","apparel","outfit"],
+  beauty: ["lipstick","makeup","foundation","mascara","serum","moisturizer","skincare","haircare","conditioner","perfume","deodorant","nail","face wash","sunscreen","toner","eyeliner","blush","concealer","palette","beauty","cosmetics","lotion","cream"],
+  home: ["sofa","bed","mattress","pillow","curtain","table","chair","lamp","shelf","wardrobe","fridge","washing machine","microwave","fan","vacuum","furniture","decor","mirror","carpet","rug","cookware","utensil","appliance","bedsheet","cushion"],
+  sports: ["cricket","football","basketball","tennis","gym","dumbbells","yoga mat","running","cycling","swimming","badminton","fitness","workout","exercise","protein","supplement","sports","jersey","helmet","gloves"],
+  books: ["book","novel","textbook","fiction","biography","history","science","programming","math","physics","chemistry","comic","manga","kindle","ebook","magazine","journal"],
+  travel: ["flight","hotel","resort","airbnb","hostel","tour","trip","holiday","vacation","passport","visa","airline","train","ticket","travel","destination","cruise"],
+  luxury: ["gucci","louis vuitton","prada","chanel","hermes","versace","armani","burberry","rolex","cartier","tiffany","dior","fendi","balenciaga","designer","luxury"],
+  general: ["toys","cables","accessories","stationery","office","tools","hardware","gifts","bags","luggage","cleaning","pet","baby","kids","school","games","puzzle","craft"]
+};
+
+var cat = "all", region = "all";
+
+function avail(s) {
+  if (region === "all") return true;
+  var r = s[6].split("|");
+  return r.indexOf("all") >= 0 || r.indexOf(region) >= 0;
+}
+
+function getUrl(s, q) {
+  if (s[8]) return s[5]; // visitOnly: open homepage
+  if (s[0] === "OLX India") return s[4] + q.replace(/\s+/g, "-");
+  return s[4] + encodeURIComponent(q);
+}
+
+function detectCat(q) {
+  var ql = q.toLowerCase(), best = null, bsc = 0;
+  for (var c in KW) {
+    var words = KW[c], sc = 0;
+    for (var i = 0; i < words.length; i++) {
+      if (ql.indexOf(words[i]) >= 0) sc++;
+    }
+    if (sc > bsc) { bsc = sc; best = c; }
+  }
+  return best;
+}
+
+function render() {
+  var g = document.getElementById("grid");
+  var em = document.getElementById("empty");
+  var rcEl = document.getElementById("rc");
+  g.innerHTML = "";
+  var vis = S.filter(function(s) {
+    return (cat === "all" || s[1].split("|").indexOf(cat) >= 0) && avail(s);
+  });
+  rcEl.textContent = vis.length + " stores";
+  document.getElementById("cntStat").textContent = vis.length;
+  if (!vis.length) { em.style.display = "block"; return; }
+  em.style.display = "none";
+  vis.forEach(function(s) {
+    var d = document.createElement("div");
+    d.className = "card";
+    d.dataset.idx = S.indexOf(s);
+    d.style.setProperty("--cc", s[2]);
+    var tags = s[7].split("|").map(function(x) { return '<span class="tag">' + x + "</span>"; }).join("");
+    var regDisp = s[6] === "all" ? "Global" : s[6].split("|").slice(0,2).join(", ");
+    var btnLabel = s[8] ? "&#x1F517; Visit" : "&#x1F50D; Search";
+    d.innerHTML =
+      '<div class="ch">' +
+        '<div class="cl" style="background:' + s[2] + '">' + s[3] + '</div>' +
+        '<div><div class="cn">' + s[0] + '</div><div class="cr">' + regDisp + '</div></div>' +
+      '</div>' +
+      '<div class="tags">' + tags + '</div>' +
+      '<div class="acts">' +
+        '<button class="bsr" onclick="ssCard(this)">' + btnLabel + '</button>' +
+        '<button class="bvt" onclick="visitCard(this)">&#x2197;</button>' +
+      '</div>';
+    g.appendChild(d);
+  });
+}
+
+function ssCard(btn) {
+  var idx = parseInt(btn.closest(".card").dataset.idx, 10);
+  var s = S[idx];
+  var q = document.getElementById("sinput").value.trim();
+  if (!q && !s[8]) { toast("&#x26A0;&#xFE0F; Type something to search!"); document.getElementById("sinput").focus(); return; }
+  window.open(getUrl(s, q), "_blank");
+}
+
+function visitCard(btn) {
+  var idx = parseInt(btn.closest(".card").dataset.idx, 10);
+  window.open(S[idx][5], "_blank");
+}
+
+function fc(btn, c) {
+  document.querySelectorAll(".cb").forEach(function(b) { b.classList.remove("active"); });
+  btn.classList.add("active");
+  cat = c;
+  render();
+}
+
+function changeRegion(r) {
+  region = r;
+  document.getElementById("rsel").value = r;
+  var lbl = CL[r] || ("&#x1F30D; " + r);
+  document.getElementById("bflag").innerHTML = lbl.split(" ")[0];
+  document.getElementById("btxt").innerHTML = r === "all" ? "Showing all regions" : "Your region: " + lbl;
+  document.getElementById("regStat").innerHTML = lbl.split(" ")[0];
+  document.getElementById("stitle").innerHTML = r === "all" ? "&nbsp;All Stores" : "&nbsp;Stores in " + lbl;
+  localStorage.setItem("shopall-region", r);
+  render();
+}
+
+// ---- PRICE COMPARISON POPUP ----
+function showPriceModal() {
+  var q = document.getElementById("sinput").value.trim();
+  if (!q) { toast("&#x26A0;&#xFE0F; Type a product name first!"); document.getElementById("sinput").focus(); return; }
+
+  document.getElementById("pmtitle").innerHTML = "&#x1F4B0; Price Comparison: " + q;
+
+  // Smart category detection so we show the RIGHT kind of stores
+  var detected = detectCat(q);
+  var fcat = (cat === "all" && detected) ? detected : cat;
+
+  var lbl = CL[region] || "&#x1F30D; Global";
+  var catTxt = (fcat !== "all") ? (fcat + " ") : "";
+  document.getElementById("pmsub").innerHTML = "Top " + catTxt + "stores in " + lbl + " &mdash; click any to see the live price";
+
+  // Build the candidate list: prefer the region's recommended stores,
+  // but always respect the detected category and region availability.
+  function matchesCat(s) { return fcat === "all" || s[1].split("|").indexOf(fcat) >= 0; }
+
+  var topStores = [];
+  var topNames = PTOP[region] || PTOP["all"];
+  topNames.forEach(function(n) {
+    var st = S.find(function(x) { return x[0] === n && avail(x) && !x[8] && matchesCat(x); });
+    if (st && topStores.indexOf(st) < 0) topStores.push(st);
+  });
+  // Fill up with any other region+category matching stores
+  S.forEach(function(s) {
+    if (avail(s) && !s[8] && matchesCat(s) && topStores.indexOf(s) < 0) topStores.push(s);
+  });
+  // Last resort: ignore category
+  if (!topStores.length) {
+    topStores = S.filter(function(s) { return avail(s) && !s[8]; }).slice(0, 8);
+  }
+
+  var top3 = topStores.slice(0, 3);
+  var rest = topStores.slice(3, 12);
+
+  var medals = [
+    { cls: "linear-gradient(135deg,#f59e0b,#d97706)", ico: "&#x1F947;" },
+    { cls: "linear-gradient(135deg,#94a3b8,#64748b)", ico: "&#x1F948;" },
+    { cls: "linear-gradient(135deg,#d97706,#92400e)", ico: "&#x1F949;" }
+  ];
+
+  var cards = document.getElementById("pmcards");
+  cards.innerHTML = "";
+  top3.forEach(function(s, i) {
+    var a = document.createElement("a");
+    a.href = getUrl(s, q);
+    a.target = "_blank";
+    a.className = "pcard";
+    a.innerHTML =
+      '<div class="prank" style="background:' + medals[i].cls + '">' + medals[i].ico + '</div>' +
+      '<div class="plogo" style="background:' + s[2] + '">' + s[3] + '</div>' +
+      '<div class="pinfo"><div class="pname">' + s[0] + '</div><div class="pdesc">Click to check live price on ' + s[0] + '</div></div>' +
+      '<span style="font-size:1rem;color:var(--acc)">&#x2192;</span>';
+    cards.appendChild(a);
+  });
+
+  var pall = document.getElementById("pmall");
+  pall.innerHTML = "";
+  rest.forEach(function(s) {
+    var a = document.createElement("a");
+    a.href = getUrl(s, q);
+    a.target = "_blank";
+    a.className = "pallbtn";
+    a.innerHTML = '<span style="width:9px;height:9px;border-radius:50%;background:' + s[2] + ';display:inline-block;flex-shrink:0"></span>' + s[0];
+    pall.appendChild(a);
+  });
+
+  document.getElementById("pmodal").classList.add("show");
+}
+
+function closePModal() {
+  document.getElementById("pmodal").classList.remove("show");
+}
+
+// ---- OPEN ALL STORES ----
+function doSearch() {
+  var q = document.getElementById("sinput").value.trim();
+  if (!q) { toast("&#x26A0;&#xFE0F; Type a product name first!"); document.getElementById("sinput").focus(); return; }
+
+  var detected = detectCat(q);
+  var fcat = cat;
+  if (cat === "all" && detected) {
+    fcat = detected;
+    var icons = { food:"&#x1F354;", grocery:"&#x1F6D2;", electronics:"&#x1F4F1;", fashion:"&#x1F457;", beauty:"&#x1F484;", home:"&#x1F3E0;", sports:"&#x26BD;", books:"&#x1F4DA;", travel:"&#x2708;", luxury:"&#x1F48E;", general:"&#x1F6CD;" };
+    var sh = document.getElementById("smartHint");
+    sh.innerHTML = "&#x1F9E0; Auto-detected: " + (icons[detected] || "") + " <strong>" + detected + "</strong> stores";
+    sh.style.display = "block";
+    setTimeout(function() { sh.style.display = "none"; }, 4000);
+  }
+
+  var vis = S.filter(function(s) {
+    return (fcat === "all" || s[1].split("|").indexOf(fcat) >= 0) && avail(s);
+  });
+
+  if (!vis.length) { toast("&#x1F614; No stores found for your region."); return; }
+
+  // Build overlay UI
+  var ovl = document.getElementById("ovlist");
+  ovl.innerHTML = "";
+  vis.forEach(function(s) {
+    var el = document.createElement("div");
+    el.className = "ovitem";
+    el.id = "ovi" + S.indexOf(s);
+    el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:' + s[2] + ';display:inline-block;flex-shrink:0"></span>' + s[0];
+    ovl.appendChild(el);
+  });
+  document.getElementById("ovtitle").innerHTML = "&#x1F680; Searching " + vis.length + " stores for: <em>" + q + "</em>";
+  document.getElementById("ovsub").textContent = "Opening tabs now...";
+  document.getElementById("pgbar").style.width = "0";
+  document.getElementById("overlay").classList.add("show");
+
+  // CRITICAL FIX: Open ALL windows SYNCHRONOUSLY (trusted user-gesture context)
+  vis.forEach(function(s) {
+    window.open(getUrl(s, q), "_blank");
+  });
+
+  // Animate progress (UI only - no more window.open in timeouts)
+  vis.forEach(function(s, i) {
+    setTimeout(function() {
+      var el = document.getElementById("ovi" + S.indexOf(s));
+      if (el) el.classList.add("done");
+      document.getElementById("pgbar").style.width = Math.round(((i + 1) / vis.length) * 100) + "%";
+      if (i === vis.length - 1) {
+        document.getElementById("ovtitle").innerHTML = "&#x2705; " + vis.length + " stores opened for: <em>" + q + "</em>";
+        document.getElementById("ovsub").textContent = "All tabs launched! Check your browser tabs.";
+      }
+    }, i * 80);
+  });
+}
+
+function closeOverlay() {
+  document.getElementById("overlay").classList.remove("show");
+}
+
+// Enter key -> show price comparison popup (no pop-up blocker issues)
+document.getElementById("sinput").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") showPriceModal();
+});
+
+// Live smart hint while typing
+document.getElementById("sinput").addEventListener("input", function() {
+  var q = this.value.trim();
+  var sh = document.getElementById("smartHint");
+  if (!q) { sh.style.display = "none"; return; }
+  var d = detectCat(q);
+  var icons = { food:"&#x1F354;", grocery:"&#x1F6D2;", electronics:"&#x1F4F1;", fashion:"&#x1F457;", beauty:"&#x1F484;", home:"&#x1F3E0;", sports:"&#x26BD;", books:"&#x1F4DA;", travel:"&#x2708;", luxury:"&#x1F48E;", general:"&#x1F6CD;" };
+  if (d && cat === "all") {
+    sh.innerHTML = "&#x1F9E0; Smart filter: " + (icons[d] || "") + " <strong>" + d + "</strong>";
+    sh.style.display = "block";
+  } else {
+    sh.style.display = "none";
+  }
+});
+
+// Theme
+function toggleTheme() {
+  var h = document.documentElement, b = document.getElementById("tbtn");
+  if (h.getAttribute("data-theme") === "dark") {
+    h.removeAttribute("data-theme");
+    b.textContent = "&#x1F319; Dark";
+    localStorage.setItem("sat", "light");
+  } else {
+    h.setAttribute("data-theme", "dark");
+    b.textContent = "&#x2600;&#xFE0F; Light";
+    localStorage.setItem("sat", "dark");
+  }
+}
+(function() {
+  if (localStorage.getItem("sat") === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
+    document.getElementById("tbtn").textContent = "&#x2600;&#xFE0F; Light";
+  }
+})();
+
+// Toast
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.innerHTML = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 3500);
+}
+
+// AUTO-DETECT LOCATION (fast, safe, cached)
+(function() {
+  var saved = localStorage.getItem("shopall-region");
+  if (saved) { region = saved; changeRegion(saved); return; }
+
+  document.getElementById("loader").style.display = "block";
+
+  var ctrl = new AbortController();
+  var tid = setTimeout(function() { ctrl.abort(); }, 5000);
+
+  fetch("https://ipapi.co/json/", { signal: ctrl.signal })
+    .then(function(r) { clearTimeout(tid); return r.json(); })
+    .then(function(d) {
+      document.getElementById("loader").style.display = "none";
+      var cc = (d.country_code || "").toUpperCase();
+      var mapped = CM[cc] || "all";
+      region = mapped;
+      changeRegion(mapped);
+      var name = (CL[mapped] || cc).replace(/<[^>]+>/g, "").trim();
+      toast("&#x1F4CD; Location detected: " + (d.city ? d.city + ", " : "") + name);
+    })
+    .catch(function() {
+      clearTimeout(tid);
+      document.getElementById("loader").style.display = "none";
+      region = "all";
+      changeRegion("all");
+      document.getElementById("btxt").textContent = "Showing all regions";
+    });
+})();
+</script>
+</body>
+</html>
